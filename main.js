@@ -73,6 +73,17 @@ bulletImage_down_right.src = "./assets/bullet/bullet_down_right.png";
 const bulletImage_down_left = new Image();
 bulletImage_down_left.src = "./assets/bullet/bullet_down_left.png";
 
+const sprites = [
+  playerImage_up,
+  playerImage_down,
+  playerImage_left,
+  playerImage_right,
+  playerImage_up_right,
+  playerImage_up_left,
+  playerImage_down_right,
+  playerImage_down_left,
+];
+
 class Terrain {
   constructor({ pos, image }) {
     this.pos = pos;
@@ -252,6 +263,46 @@ class Bullet {
   }
 }
 
+class Enemy {
+  constructor({
+    pos,
+    vel,
+    image,
+    frames = {
+      max: 8,
+    },
+  }) {
+    this.pos = pos;
+    this.vel = vel;
+    this.image = image;
+    this.frames = { ...frames, val: 0, elapsed: 0 };
+    this.image.onload = () => {
+      this.width = this.image.width / this.frames.max;
+      this.height = this.image.height;
+    };
+    this.sprites = sprites;
+  }
+
+  draw() {
+    c.drawImage(
+      this.image,
+      this.frames.val * this.width,
+      0,
+      this.image.width / this.frames.max,
+      this.image.height,
+      this.pos.x,
+      this.pos.y,
+      this.image.width / this.frames.max,
+      this.image.height
+    );
+  }
+
+  randomPosition() {
+    this.pos.x = Math.floor(Math.random() * canvas.width);
+    this.pos.y = Math.floor(Math.random() * canvas.height);
+  }
+}
+
 const terrain = new Terrain({
   pos: { x: 0, y: 0 },
   image: terrainImage,
@@ -291,6 +342,24 @@ function shootBullet() {
   setTimeout(() => (shootBullet = temp), 100);
 }
 
+let enemies = [];
+function spawnEnemies() {
+  const enemy = new Enemy({
+    pos: {
+      x: Math.floor(Math.random() * canvas.width),
+      y: Math.floor(Math.random() * canvas.height),
+    },
+    vel: 1,
+    image: playerImage_down,
+    frames: {
+      max: 8,
+    },
+  });
+
+  enemy.randomPosition();
+  enemies.push(enemy);
+}
+
 const keys = {
   up: { pressed: false },
   down: { pressed: false },
@@ -299,6 +368,13 @@ const keys = {
   shoot: { pressed: false },
   talk: { pressed: false },
 };
+
+spawnEnemies();
+spawnEnemies();
+spawnEnemies();
+spawnEnemies();
+spawnEnemies();
+spawnEnemies();
 
 (function animate() {
   window.requestAnimationFrame(animate);
@@ -316,9 +392,27 @@ const keys = {
       }
     });
   }
+
+  enemies.forEach((enemy) => {
+    enemy.draw();
+
+    if (bullets.length > 0) {
+      bullets.forEach((bullet) => {
+        if (
+          bullet.pos.x > enemy.pos.x &&
+          bullet.pos.x < enemy.pos.x + enemy.width &&
+          bullet.pos.y > enemy.pos.y &&
+          bullet.pos.y < enemy.pos.y + enemy.height
+        ) {
+          enemies.splice(enemies.indexOf(enemy), 1);
+          bullets.splice(bullets.indexOf(bullet), 1);
+        }
+      });
+    }
+  });
 })();
 
-addEventListener("keydown", (e) => {
+window.addEventListener("keydown", (e) => {
   if (e.key === controls.up) keys.up.pressed = true;
   if (e.key === controls.down) keys.down.pressed = true;
   if (e.key === controls.left) keys.left.pressed = true;
@@ -326,7 +420,7 @@ addEventListener("keydown", (e) => {
   if (e.key === controls.shoot) shootBullet();
 });
 
-addEventListener("keyup", (e) => {
+window.addEventListener("keyup", (e) => {
   if (e.key === controls.up) keys.up.pressed = false;
   if (e.key === controls.down) keys.down.pressed = false;
   if (e.key === controls.left) keys.left.pressed = false;
