@@ -1,0 +1,63 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  height: 100%;
+  overflow: hidden;
+}
+
+#app {
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #000;
+  font-family: Avenir, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#controls {
+  position: fixed;
+  inset: auto 40px 40px 40px;
+  width: calc(100% - 80px);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  opacity: 0.2;
+}
+
+#controls ul {
+  width: 154px;
+  height: 154px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  list-style: none;
+  border-radius: 2rem;
+  overflow: hidden;
+}
+
+button {
+  cursor: pointer;
+  width: 150px;
+  height: 50px;
+  background: white;
+  border: none;
+  outline: none;
+  transition: all 0.2s ease-in-out;
+}
+
+#controls ul li {
+  width: 50px;
+  height: 50px;
+  overflow: hidden;
+}
+
+#empty {
+  display: none;
+}
