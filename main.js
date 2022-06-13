@@ -116,6 +116,7 @@ class Player {
     };
     this.moving = false;
     this.sprites = sprites;
+    this.weight = 5;
   }
 
   draw() {
@@ -138,7 +139,7 @@ class Player {
 
     if (this.frames.max > 1) this.frames.elapsed++;
 
-    if (this.frames.elapsed % 10 === 0) {
+    if (this.frames.elapsed % this.weight === 0) {
       if (this.frames.val < this.frames.max - 1) this.frames.val++;
       else this.frames.val = 0;
     }
@@ -147,8 +148,31 @@ class Player {
   move() {
     this.moving = false;
     this.vel = 1;
+    this.weight = 5;
 
-    if (Object.values(keys).filter((key) => key.pressed).length > 1) {
+    if (this.pos.x < 0) this.pos.x = 0;
+    if (this.pos.x > canvas.width - this.width)
+      this.pos.x = canvas.width - this.width;
+    if (this.pos.y < 0) this.pos.y = 0;
+    if (this.pos.y > canvas.height - this.height)
+      this.pos.y = canvas.height - this.height;
+
+    if (keys.run.pressed) {
+      if (keys.shoot.pressed) {
+        this.vel = 1;
+        this.weight = 5;
+      } else {
+        this.vel = 1.5;
+        this.weight = 4;
+      }
+    }
+
+    if (
+      (keys.up.pressed && keys.left.pressed) ||
+      (keys.up.pressed && keys.right.pressed) ||
+      (keys.down.pressed && keys.left.pressed) ||
+      (keys.down.pressed && keys.right.pressed)
+    ) {
       this.vel /= ratio;
     }
 
@@ -205,6 +229,10 @@ class Bullet {
     this.vel = vel;
     this.image = bulletImage_right;
     this.direction = direction;
+    this.image.onload = () => {
+      this.width = this.image.width;
+      this.height = this.image.height;
+    };
   }
 
   draw() {
@@ -360,19 +388,31 @@ function spawnEnemies() {
   enemies.push(enemy);
 }
 
+function bulletCollision(bullet, gen_enemies) {
+  gen_enemies.forEach((enemy) => {
+    if (
+      bullet.pos.x + bullet.width > enemy.pos.x &&
+      bullet.pos.x < enemy.pos.x + enemy.width &&
+      bullet.pos.y + bullet.height > enemy.pos.y &&
+      bullet.pos.y < enemy.pos.y + enemy.height
+    ) {
+      console.log("hit");
+      enemy.randomPosition();
+      enemies.splice(enemies.indexOf(enemy), 1);
+    }
+  });
+}
+
 const keys = {
   up: { pressed: false },
   down: { pressed: false },
   left: { pressed: false },
   right: { pressed: false },
   shoot: { pressed: false },
+  run: { pressed: false },
   talk: { pressed: false },
 };
 
-spawnEnemies();
-spawnEnemies();
-spawnEnemies();
-spawnEnemies();
 spawnEnemies();
 spawnEnemies();
 
@@ -383,33 +423,26 @@ spawnEnemies();
   player.draw();
   player.move();
 
+  enemies.forEach((enemy) => {
+    enemy.draw();
+  });
+
   if (bullets.length > 0) {
     bullets.forEach((bullet, i) => {
       bullet.draw();
       bullet.move(playerDirection);
-      if (bullet.pos.x > canvas.width || bullet.pos.x < 0) {
+      bulletCollision(bullet, enemies);
+
+      if (
+        bullet.pos.x > canvas.width ||
+        bullet.pos.x < 0 ||
+        bullet.pos.y > canvas.height ||
+        bullet.pos.y < 0
+      ) {
         bullets.splice(i, 1);
       }
     });
   }
-
-  enemies.forEach((enemy) => {
-    enemy.draw();
-
-    if (bullets.length > 0) {
-      bullets.forEach((bullet) => {
-        if (
-          bullet.pos.x > enemy.pos.x &&
-          bullet.pos.x < enemy.pos.x + enemy.width &&
-          bullet.pos.y > enemy.pos.y &&
-          bullet.pos.y < enemy.pos.y + enemy.height
-        ) {
-          enemies.splice(enemies.indexOf(enemy), 1);
-          bullets.splice(bullets.indexOf(bullet), 1);
-        }
-      });
-    }
-  });
 })();
 
 window.addEventListener("keydown", (e) => {
@@ -417,7 +450,8 @@ window.addEventListener("keydown", (e) => {
   if (e.key === controls.down) keys.down.pressed = true;
   if (e.key === controls.left) keys.left.pressed = true;
   if (e.key === controls.right) keys.right.pressed = true;
-  if (e.key === controls.shoot) shootBullet();
+  if (e.key === controls.shoot) keys.shoot.pressed = true;
+  if (e.key === controls.run) keys.run.pressed = true;
 });
 
 window.addEventListener("keyup", (e) => {
@@ -425,6 +459,9 @@ window.addEventListener("keyup", (e) => {
   if (e.key === controls.down) keys.down.pressed = false;
   if (e.key === controls.left) keys.left.pressed = false;
   if (e.key === controls.right) keys.right.pressed = false;
+  if (e.key === controls.shoot) keys.shoot.pressed = false;
+  if (e.key === controls.shoot) shootBullet();
+  if (e.key === controls.run) keys.run.pressed = false;
 });
 
 const btn_shoot = document.getElementById("shoot");
